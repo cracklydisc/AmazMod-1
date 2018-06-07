@@ -31,11 +31,11 @@ public class NotificationFactory {
             text = lines[lines.length - 1].toString();
         }
 
-        String notificationPackgae = statusBarNotification.getPackageName();
+        String notificationPackgage = statusBarNotification.getPackageName();
         try {
             int iconId = bundle.getInt(Notification.EXTRA_SMALL_ICON);
             PackageManager manager = context.getPackageManager();
-            Resources resources = manager.getResourcesForApplication(notificationPackgae);
+            Resources resources = manager.getResourcesForApplication(notificationPackgage);
             Bitmap bitmap = BitmapFactory.decodeResource(resources, iconId);
 
             int width = bitmap.getWidth();
@@ -48,13 +48,14 @@ public class NotificationFactory {
             notificationData.setIconHeight(height);
         } catch (Exception e) {
             notificationData.setIcon(new int[]{});
-            LoggerScoped.get(NotificationFactory.class).error(e, "Failed to get bipmap from %s", notificationPackgae);
+            LoggerScoped.get(NotificationFactory.class).error(e, "Failed to get bipmap from %s", notificationPackgage);
         }
 
         notificationData.setId(statusBarNotification.getId());
         notificationData.setKey(statusBarNotification.getKey());
         notificationData.setTitle(title);
         notificationData.setText(text);
+        notificationData.setPkg(notificationPackgage);
 
 
         return notificationData;

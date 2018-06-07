@@ -3,6 +3,7 @@ package amazmod.com.transport.data;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
 
 import com.huami.watch.transport.DataBundle;
 
@@ -19,6 +20,7 @@ public class NotificationData extends Transportable implements Parcelable {
     private final String DATA_ICON = "icon";
     private final String DATA_ICON_WIDTH = "iconWidth";
     private final String DATA_ICON_HEIGHT = "iconHeight";
+    private final String DATA_PKG = "pkg";
 
     private String key;
     private int id;
@@ -30,6 +32,7 @@ public class NotificationData extends Transportable implements Parcelable {
     private int vibration;
     private boolean isDeviceLocked;
     private int timeoutRelock;
+    private String pkg;
 
     public NotificationData() {
     }
@@ -39,6 +42,7 @@ public class NotificationData extends Transportable implements Parcelable {
         id = in.readInt();
         title = in.readString();
         text = in.readString();
+        pkg = in.readString();
         icon = in.createIntArray();
         iconWidth = in.readInt();
         iconHeight = in.readInt();
@@ -139,12 +143,21 @@ public class NotificationData extends Transportable implements Parcelable {
         this.iconHeight = iconHeight;
     }
 
+    public String getPkg() {
+        return pkg;
+    }
+
+    public void setPkg(String pkg) {
+        this.pkg = pkg;
+    }
+
     @Override
     public DataBundle toDataBundle(DataBundle dataBundle) {
         dataBundle.putString(DATA_KEY, key);
         dataBundle.putInt(DATA_ID, id);
         dataBundle.putString(DATA_TITLE, title);
         dataBundle.putString(DATA_TEXT, text);
+        dataBundle.putString(DATA_PKG, pkg);
         dataBundle.putIntArray(DATA_ICON, icon);
         dataBundle.putInt(DATA_ICON_WIDTH, iconWidth);
         dataBundle.putInt(DATA_ICON_HEIGHT, iconHeight);
@@ -172,6 +185,7 @@ public class NotificationData extends Transportable implements Parcelable {
         int[] icon = dataBundle.getIntArray("icon");
         int iconWidth = dataBundle.getInt("iconWidth");
         int iconHeight = dataBundle.getInt("iconHeight");
+        String pkg = dataBundle.getString("pkg");
 
         notificationData.setTitle(title);
         notificationData.setText(text);
@@ -180,6 +194,7 @@ public class NotificationData extends Transportable implements Parcelable {
         notificationData.setIconHeight(iconHeight);
         notificationData.setId(id);
         notificationData.setKey(key);
+        notificationData.setPkg(pkg);
 
         return notificationData;
     }
@@ -195,6 +210,7 @@ public class NotificationData extends Transportable implements Parcelable {
         dest.writeInt(id);
         dest.writeString(title);
         dest.writeString(text);
+        dest.writeString(pkg);
         dest.writeIntArray(icon);
         dest.writeInt(iconWidth);
         dest.writeInt(iconHeight);

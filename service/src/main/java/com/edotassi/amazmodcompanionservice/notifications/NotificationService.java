@@ -1,14 +1,27 @@
 package com.edotassi.amazmodcompanionservice.notifications;
 
 
+import android.app.KeyguardManager;
 import android.app.Notification;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.PixelFormat;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.Icon;
+import android.graphics.drawable.VectorDrawable;
+import android.os.PowerManager;
 import android.os.Vibrator;
 import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 
 import com.edotassi.amazmodcompanionservice.ui.NotificationActivity;
+import com.huami.watch.notification.data.Utils;
 
 import amazmod.com.transport.data.NotificationData;
 
@@ -47,8 +60,9 @@ public class NotificationService {
         context.startActivity(intent);
     }
 
-    /*
-    private void postWithStandardUI(NotificationSpec notificationSpec) {
+
+    private void postWithStandardUI(NotificationData notificationSpec) {
+
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, "")
                 .setSmallIcon(android.R.drawable.ic_dialog_email)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -57,10 +71,74 @@ public class NotificationService {
                 .setContentTitle(notificationSpec.getTitle())
                 .setVibrate(new long[]{notificationSpec.getVibration()});
 
+        Log.d("Notifiche", "postWithStandardUI: " + notificationSpec.getKey() + " " + notificationSpec.getId() + " " + notificationSpec.getPkg());
+
+      //  Utils.BitmapExtender bitmapExtender = Utils.retrieveAppIcon(context, notificationSpec.getKey());
+        //if (bitmapExtender != null) {
+        //    builder.setLargeIcon(bitmapExtender.bitmap);
+            //builder.setSmallIcon(Icon.createWithBitmap(bitmapExtender.bitmap));
+            //data.mCanRecycleBitmap = bitmapExtender.canRecycle;
+    //    }
+
+        Intent intent = new Intent(context, NotificationsReceiver.class);
+        intent.setPackage(context.getPackageName());
+        intent.setAction("com.amazmod.intent.notification.reply");
+        intent.putExtra("reply", "hello world!");
+        PendingIntent replyIntent = PendingIntent.getBroadcast(context, (int) System.currentTimeMillis(), intent, PendingIntent.FLAG_ONE_SHOT);
+
+        NotificationCompat.Action installAction = new NotificationCompat.Action.Builder(android.R.drawable.ic_input_add, "Reply", replyIntent).build();
+        builder.extend(new NotificationCompat.WearableExtender().addAction(installAction));
         Notification notification = builder.build();
+
+        KeyguardManager km = (KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
+        if(km.isKeyguardLocked()) {
+            PowerManager pm = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+            PowerManager.WakeLock wakeLock = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK
+                    | PowerManager.ACQUIRE_CAUSES_WAKEUP
+                    | PowerManager.ON_AFTER_RELEASE, "MyWakeLock");
+            wakeLock.acquire();
+            wakeLock.release();
+        }
         notificationManager.notify(notificationSpec.getId(), notification);
     }
-    */
+
+    private static Bitmap drawableToBitmap(Drawable drawable) {
+        Bitmap bitmap = Bitmap.createBitmap(drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight(), drawable.getOpacity() != PixelFormat.OPAQUE ? Bitmap.Config.ARGB_8888 : Bitmap.Config.RGB_565);
+        Canvas canvas = new Canvas(bitmap);
+        drawable.setBounds(0, 0, drawable.getIntrinsicWidth(), drawable.getIntrinsicHeight());
+        drawable.draw(canvas);
+        return bitmap;
+    }
+
+    public static Utils.BitmapExtender retrieveAppIcon(Context context, String pkgName) {
+        if (context == null || pkgName == null) {
+            return null;
+        }
+        Utils.BitmapExtender bitmapExtender = new Utils.BitmapExtender();
+        Bitmap bitmap = null;
+        try {
+            Drawable iconDrawable = context.getPackageManager().getApplicationIcon(pkgName);
+            if (iconDrawable instanceof BitmapDrawable) {
+                bitmap = ((BitmapDrawable) iconDrawable).getBitmap();
+                bitmapExtender.canRecycle = false;
+            } else if (iconDrawable instanceof VectorDrawable) {
+                bitmap = drawableToBitmap(iconDrawable);
+                bitmapExtender.canRecycle = true;
+            }
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        } catch (NoClassDefFoundError e2) {
+            e2.printStackTrace();
+        } catch (Exception e3) {
+            e3.printStackTrace();
+        }
+        if (bitmap != null && bitmap.getWidth() > 96) {
+            bitmap = Bitmap.createScaledBitmap(bitmap, 96, 96, false);
+        }
+        bitmapExtender.bitmap = bitmap;
+        return bitmapExtender;
+    }
+
 
     /*
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP_MR1)
