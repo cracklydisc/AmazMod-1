@@ -18,9 +18,11 @@ import android.graphics.drawable.VectorDrawable;
 import android.os.PowerManager;
 import android.os.Vibrator;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.RemoteInput;
 import android.util.Log;
 
 import com.edotassi.amazmodcompanionservice.ui.NotificationActivity;
+import com.edotassi.amazmodcompanionservice.ui.TextInputActivity;
 import com.huami.watch.notification.data.Utils;
 
 import amazmod.com.transport.data.NotificationData;
@@ -37,6 +39,8 @@ public class NotificationService {
     private Context context;
     private Vibrator vibrator;
     private NotificationManager notificationManager;
+    public static final String EXTRA_VOICE_REPLY = "extra_voice_reply";
+    public static final String KEY_QUICK_REPLY_TEXT = "quick_reply";
 
     public NotificationService(Context context) {
         this.context = context;
@@ -46,7 +50,7 @@ public class NotificationService {
     }
 
     public void post(NotificationData notificationSpec) {
-        postWithCustomUI(notificationSpec);
+        postWithStandardUI(notificationSpec);
     }
 
     private void postWithCustomUI(NotificationData notificationSpec) {
@@ -71,14 +75,28 @@ public class NotificationService {
                 .setContentTitle(notificationSpec.getTitle())
                 .setVibrate(new long[]{notificationSpec.getVibration()});
 
+
         Log.d("Notifiche", "postWithStandardUI: " + notificationSpec.getKey() + " " + notificationSpec.getId() + " " + notificationSpec.getPkg());
 
-      //  Utils.BitmapExtender bitmapExtender = Utils.retrieveAppIcon(context, notificationSpec.getKey());
-        //if (bitmapExtender != null) {
-        //    builder.setLargeIcon(bitmapExtender.bitmap);
+      //  Utils.BitmapExtender bitmapExtender = Utils.retrieveAppIcon(context, notificationSpec.getPkg());
+       // if (bitmapExtender != null) {
+      /*  int[] iconData = notificationSpec.getIcon();
+        int iconWidth = notificationSpec.getIconWidth();
+        int iconHeight = notificationSpec.getIconHeight();
+        Bitmap bitmap = Bitmap.createBitmap(iconWidth, iconHeight, Bitmap.Config.ARGB_8888);
+        bitmap.setPixels(iconData, 0, iconWidth, 0, 0, iconWidth, iconHeight);
+
+        builder.setLargeIcon(bitmap);*/
             //builder.setSmallIcon(Icon.createWithBitmap(bitmapExtender.bitmap));
             //data.mCanRecycleBitmap = bitmapExtender.canRecycle;
-    //    }
+       //}
+        String replyLabel = "Replay";
+        String[] replyChoices = new String[] { "ok", "no", "forse domani"};
+
+        RemoteInput remoteInput = new RemoteInput.Builder(KEY_QUICK_REPLY_TEXT)
+                .setLabel(replyLabel)
+                .setChoices(replyChoices)
+                .build();
 
         Intent intent = new Intent(context, NotificationsReceiver.class);
         intent.setPackage(context.getPackageName());
@@ -86,9 +104,18 @@ public class NotificationService {
         intent.putExtra("reply", "hello world!");
         PendingIntent replyIntent = PendingIntent.getBroadcast(context, (int) System.currentTimeMillis(), intent, PendingIntent.FLAG_ONE_SHOT);
 
-        NotificationCompat.Action installAction = new NotificationCompat.Action.Builder(android.R.drawable.ic_input_add, "Reply", replyIntent).build();
-        builder.extend(new NotificationCompat.WearableExtender().addAction(installAction));
-        Notification notification = builder.build();
+
+
+        Intent actionIntent = new Intent(context, TextInputActivity.class);
+        PendingIntent actionPendingIntent =
+                PendingIntent.getActivity(context, 0, actionIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT);
+
+// Create the action
+        NotificationCompat.Action action =
+                new NotificationCompat.Action.Builder(android.support.v4.R.drawable.notification_action_background,
+                        "action", actionPendingIntent)
+                        .build();
 
         KeyguardManager km = (KeyguardManager) context.getSystemService(Context.KEYGUARD_SERVICE);
         if(km.isKeyguardLocked()) {
@@ -99,6 +126,10 @@ public class NotificationService {
             wakeLock.acquire();
             wakeLock.release();
         }
+
+        NotificationCompat.Action installAction = new NotificationCompat.Action.Builder(android.R.drawable.ic_input_add, "Reply", replyIntent).build();
+        builder.extend(new NotificationCompat.WearableExtender().addAction(installAction).addAction(action));
+        Notification notification = builder.build();
         notificationManager.notify(notificationSpec.getId(), notification);
     }
 

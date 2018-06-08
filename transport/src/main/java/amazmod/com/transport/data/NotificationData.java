@@ -185,7 +185,7 @@ public class NotificationData extends Transportable implements Parcelable {
         int[] icon = dataBundle.getIntArray("icon");
         int iconWidth = dataBundle.getInt("iconWidth");
         int iconHeight = dataBundle.getInt("iconHeight");
-        String pkg = dataBundle.getString("pkg");
+       String pkg = dataBundle.getString("pkg");
 
         notificationData.setTitle(title);
         notificationData.setText(text);
